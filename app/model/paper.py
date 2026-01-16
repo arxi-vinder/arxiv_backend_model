@@ -23,7 +23,9 @@ class Paper(Base):
     )
 
     published_date = Column(
-        DateTime
+        DateTime(timezone=True),
+        nullable=False,
+        index=True  
     )
     
     category = Column(
