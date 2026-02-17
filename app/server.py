@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 
+from app.api.routes import paper
+
 
 app = FastAPI()
 
@@ -10,3 +12,7 @@ def check_health():
         "status":"Success",
         "message":"Hello Coy"
     }
+
+app.include_router(
+    paper.router
+)
