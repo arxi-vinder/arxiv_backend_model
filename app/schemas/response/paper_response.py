@@ -6,8 +6,7 @@ class PaperResponse(BaseModel):
     id: int
     title: str
     abstract: Optional[str]
-    published_date: datetime
+    published_date: str
     category: str
     url: str
-    doi: str
     created_at: datetime
