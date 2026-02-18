@@ -38,6 +38,11 @@ class Paper(Base):
         index = True
     )
     
+    author = Column(
+        String,
+        index=True
+    )
+    
     created_at = Column(
         DateTime, 
         default=datetime.datetime.now
