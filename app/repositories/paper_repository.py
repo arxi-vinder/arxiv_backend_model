@@ -14,3 +14,9 @@ class PaperRepository():
         return self.db.scalars(
             stmt
         ).all()
+    
+    def get_detail_paper(self , id):
+        return self.db.get(
+            Paper,
+            id
+    )

@@ -9,3 +9,6 @@ class PaperService():
 
     def getPaperService(self):
         return self.repo.getPaper()
+    
+    def get_paper_id(self,id):
+        return self.repo.get_detail_paper(id)

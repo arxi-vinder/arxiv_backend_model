@@ -3,7 +3,7 @@ from app.db.database import Base
 import datetime
 
 class Paper(Base):
-    __tablename__="paper"
+    __tablename__="papers"
     
     id = Column (
         Integer,

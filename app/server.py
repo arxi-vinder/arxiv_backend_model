@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from app.api.routes import paper
+from app.api.routes import paper_api
 
 
 app = FastAPI()
@@ -14,5 +14,5 @@ def check_health():
     }
 
 app.include_router(
-    paper.router
+    paper_api.router
 )
