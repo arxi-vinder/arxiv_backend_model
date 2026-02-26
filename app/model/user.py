@@ -3,7 +3,7 @@ from app.db.database import Base
 from sqlalchemy import Column, DateTime, Integer, String
 
 class User(Base):
-    __tablename__ = "user"
+    __tablename__ = "users"
     
     
     id = Column(
@@ -25,11 +25,11 @@ class User(Base):
         index=True
     )
     
-    role = Column(
-        Integer,
-        unique=True,
-        index =True
-    )
+    # role = Column(
+    #     Integer,
+    #     unique=True,
+    #     index =True
+    # )
     
     created_at = Column(
         DateTime, 

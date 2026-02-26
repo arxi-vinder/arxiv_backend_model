@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from app.api.routes import paper_api
+from app.api.routes import auth_api, paper_api, recommender_api
 
 
 app = FastAPI()
@@ -14,5 +14,13 @@ def check_health():
     }
 
 app.include_router(
-    paper_api.router
+    paper_api.router,
+)
+
+app.include_router(
+    recommender_api.router
+)
+
+app.include_router(
+    auth_api.router
 )
