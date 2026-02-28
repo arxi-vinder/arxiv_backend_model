@@ -54,47 +54,48 @@ def register(user:AuthRequest,db:Session = Depends(get_db)):
                 }
         )
         
-# @router.post("/auth/login")
-# def login(user:AuthRequest , db:Session = Depends(get_db)):
-#     try:
+@router.post("/auth/login")
+def login(user:AuthRequest , db:Session = Depends(get_db)):
+    try:
+        repo = AuthRepository(
+            db
+        )
         
-#         print(":aa")
-        
-        
-        
-        
-        
-        
-#         # if service.checkIfUserExists(user.username):
-#         #     return {
-#         #         "status":"success",
-#         #         "message":"User Already Exists !"
-#         #     }
-        
-#         # else:            
-#         #     token = service.register(
-#         #         user.username , 
-#         #         user.password
-#         #     )
-            
-#             # return {
-#             #     "status": "success",
-#             #     "message": "User registered successfully",
-#             #     "data": token
-#             # }
-        
-#     except Exception as e:
-#         raise HTTPException(
-#                 status_code=404,
-#                 detail={
-#                     "status": "error",
-#                     "error_type": type(e).__name__,
-#                     "message": str(e),
-#                     "traceback": traceback.format_exc()
-#                 }
-#         )
+        service = AuthService(
+            repo
+        )
+
+        token = service.login(
+                user.username , 
+                user.password
+        )
         
         
-# @router.delete("/auth/logout")
-# def logout():
-#     pass
+        if token is None:
+            raise HTTPException(
+                status_code=404
+            )
+
+        return {
+                "status": "success",
+                "message": "Success Login",
+                "data": token
+            }
+        
+    except Exception as e:
+        raise HTTPException(
+                status_code=404,
+                detail={
+                    "status": "error",
+                    "error_type": type(e).__name__,
+                    "message": str(e),
+                    "traceback": traceback.format_exc()
+                }
+        )
+
+@router.post("/auth/logout")
+def logout():
+    return {
+        "status": "success",
+        "message": "Logout successful. Please delete token on client side."
+    }
