@@ -13,7 +13,7 @@ class Feedback(Base):
         autoincrement=True
     )
     
-    feedback_response: Mapped[int] = mapped_column(
+    response: Mapped[int] = mapped_column(
         Integer,
         nullable=False,
         index=True
@@ -22,14 +22,14 @@ class Feedback(Base):
     user_id = Column(
         Integer,
         ForeignKey(
-            "user.id"
+            "users.id"
         )
     )
 
     paper_id = Column(
         Integer,
         ForeignKey(
-            "paper.id"
+            "papers.id"
         )
     )
 
@@ -47,3 +47,5 @@ class Feedback(Base):
         DateTime, 
         default=datetime.datetime.now
     )
+    
+    user = relationship("User", back_populates="feedbacks")
