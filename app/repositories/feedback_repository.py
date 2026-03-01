@@ -1,3 +1,4 @@
+from sqlalchemy import func
 from sqlmodel import Session
 
 from app.model.feedback import Feedback
@@ -30,7 +31,6 @@ class FeedbackRepository():
         return feedback
     
     def update(self, feedback: Feedback, response: int):
-        feedback.response = response
         if feedback.response is None:
             feedback.response = 1
         else:
@@ -41,3 +41,19 @@ class FeedbackRepository():
         self.db.refresh(feedback)
 
         return feedback
+    
+    def count_total_feedback(self) -> int:
+        total = self.db.query(func.count(Feedback.id)).scalar()
+        return total or 1
+    
+    def get_paper_stats(self, paper_id: int):
+
+        reward = self.db.query(func.sum(Feedback.response)).filter(
+            Feedback.paper_id == paper_id
+        ).scalar() or 0
+
+        total_action = self.db.query(func.count(Feedback.id)).filter(
+            Feedback.paper_id == paper_id
+        ).scalar() or 0
+
+        return reward, total_action
