@@ -1,11 +1,12 @@
 from sqlalchemy import Column, DateTime, Integer, String, Text
 from app.db.database import Base
 import datetime
+from sqlalchemy.orm import Mapped, mapped_column
 
 class Paper(Base):
     __tablename__="papers"
     
-    id = Column (
+    id : Mapped[int] = mapped_column(
         Integer,
         primary_key=True,
         index=True,
