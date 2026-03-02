@@ -21,7 +21,7 @@ class RecommendationService:
         Ambil data dari repository lalu build TF-IDF + cosine
         """
 
-        papers = self.paper_repository.getPaper()
+        papers = self.paper_repository.getPaper(100)
 
         if not papers:
             self.datas = pd.DataFrame()
@@ -66,4 +66,7 @@ class RecommendationService:
                 "similarity_score": float(similarity_scores[i])
             })
 
-        return results
+        return {
+            "paper_id": paper_id,
+            "recommendations": results
+        }
