@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from app.api.routes import auth_api, paper_api, recommender_api
+from app.api.routes import auth_api, feedback_api, paper_api, recommender_api
 
 
 app = FastAPI()
@@ -23,4 +23,8 @@ app.include_router(
 
 app.include_router(
     auth_api.router
+)
+
+app.include_router(
+    feedback_api.router
 )

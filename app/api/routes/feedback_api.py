@@ -4,26 +4,51 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session
 
 from app.db.database import get_db
+from app.model.user import User
+from app.repositories.feedback_repository import FeedbackRepository
+from app.schemas.request.feedback_user_request import FeedbackRequest
+from app.services.feedback_service import FeedbackService
+from app.services.paper_service import PaperService
+from app.utils.jwt import get_current_user
 
 
 router = APIRouter(
     prefix='/api/v1'
 )
 
-@router.get("/feedback/{id}")
-def save_feedback(id,db:Session = Depends(get_db)):
+@router.post("/feedback")
+def save_feedback(
+    request: FeedbackRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     try:
-        
-        
-        
-        pass
+        repo = FeedbackRepository(
+            db
+        )
+        service = FeedbackService(
+            repo
+        )
+
+        result = service.send_feedback(
+            response=request.response,
+            current_user_id=current_user.id,
+            paper_id=request.paper_id
+        )
+
+        return {
+            "status": "success",
+            "message": "Feedback saved successfully",
+            "data": result
+        }
+
     except Exception as e:
         raise HTTPException(
-                status_code=404,
-                detail={
-                    "status": "error",
-                    "error_type": type(e).__name__,
-                    "message": str(e),
-                    "traceback": traceback.format_exc()
-                }
+            status_code=400,
+            detail={
+                "status": "error",
+                "error_type": type(e).__name__,
+                "message": str(e),
+                "traceback": traceback.format_exc()
+            }
         )

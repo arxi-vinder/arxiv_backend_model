@@ -1,8 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session
 from app.db.database import get_db
+from app.repositories.feedback_repository import FeedbackRepository
 from app.repositories.paper_repository import PaperRepository
 from app.services import recommendation_service
+from app.services.ucb_service import UCBService
 
 
 router = APIRouter(
@@ -11,21 +13,35 @@ router = APIRouter(
 
 
 @router.get("/recommend/{paper_id}")
-def get_recommendation(paper_id: int, top_n: int = 5 , db:Session=Depends(get_db)):
-    repo = PaperRepository(
-            db
-        )
-        
-    service = recommendation_service.RecommendationService(
-        repo
+async def get_recommendation(
+    paper_id: int,
+    top_n: int = 5,
+    db: Session = Depends(get_db)
+):
+    repo = PaperRepository(db)
+
+    service = recommendation_service.RecommendationService(repo)
+
+    results = service.get_recommendations_by_paper_id(
+        paper_id,
+        top_n
     )
-    
-    results = service.get_recommendations_by_paper_id(paper_id,top_n)
 
     if not results:
         raise HTTPException(status_code=404, detail="Paper not found")
 
+    cosine_list = results['recommendations'] # type: ignore
+
+    feedback_repo = FeedbackRepository(db)
+
+    ucb_service = UCBService(
+        feedback_repo=feedback_repo,
+        paper_repo=repo
+    )
+
+    final_results = ucb_service.rank_from_list(cosine_list)
+
     return {
         "paper_id": paper_id,
-        "recommendations": results
+        "recommendations": final_results
     }

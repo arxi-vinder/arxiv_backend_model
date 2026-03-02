@@ -1,10 +1,10 @@
-from fastapi import Depends
+from fastapi import Depends, Request
 from sqlmodel import Session
-from app.utils.security import hash_pwd,verify_pwd
+from app.utils.jwt import hash_pwd,verify_pwd
 from app.db.database import get_db
 from app.model.user import User
 from app.repositories.auth_repository import AuthRepository
-from app.utils.security import create_access_token
+from app.utils.jwt import create_access_token
 class AuthService:
     
     def __init__(self,repo:AuthRepository) -> None:
