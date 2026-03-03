@@ -9,8 +9,8 @@ class PaperRepository():
     def __init__(self, db: Session):
         self.db = db
 
-    def getPaper(self):
-        stmt = select(Paper)
+    def getPaper(self , limit:int = 100):
+        stmt = select(Paper).limit(limit)
         return self.db.scalars(
             stmt
         ).all()
