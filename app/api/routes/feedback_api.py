@@ -52,3 +52,33 @@ def save_feedback(
                 "traceback": traceback.format_exc()
             }
         )
+        
+@router.delete("/feedback/delete")
+def delete_all_feedback(
+    db: Session = Depends(get_db),
+    ):
+    try:
+        repo = FeedbackRepository(
+            db
+        )
+        service = FeedbackService(
+            repo
+        )
+
+        service.delete_feedback_user()
+        
+        return {
+            "status":"success",
+            "message": "All feedback deleted"
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "status": "error",
+                "error_type": type(e).__name__,
+                "message": str(e),
+                "traceback": traceback.format_exc()
+            }
+        )
