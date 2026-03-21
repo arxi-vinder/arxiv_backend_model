@@ -57,3 +57,7 @@ class FeedbackRepository():
         ).scalar() or 0
 
         return reward, total_action
+
+    def delete_all_feedback(self):
+        self.db.query(Feedback).delete()
+        self.db.commit()

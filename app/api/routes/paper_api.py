@@ -4,11 +4,13 @@ from fastapi import APIRouter, Depends, HTTPException,status
 from sqlmodel import Session
 
 from app.db.database import get_db
+from app.model.user import User
 from app.repositories.paper_repository import PaperRepository
 from app.schemas.response.paper_response import PaperResponse
 from app.schemas.response.paper_response_status import PaperResponseStatus
 from app.services import recommendation_service
 from app.services.paper_service import PaperService
+from app.utils.jwt import get_current_user
 
 
 router = APIRouter(

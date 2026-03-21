@@ -39,3 +39,6 @@ class FeedbackService():
             paper_id=paper_id,
             response=response
         )
+
+    def delete_feedback_user(self):
+        return self.paper_repository.delete_all_feedback()
