@@ -11,17 +11,17 @@ class UCBService:
 
     def calculate_ucb(self, reward, total_action, t):
 
+        
         if total_action == 0:
-            return 0.0
+            return float(0) 
 
         reward = float(reward)
         total_action = float(total_action)
         t = float(t)
 
-        exploit = reward
-
+        exploit = reward / total_action
         exploration = math.sqrt(
-            (self.alpha * math.log(t + 1)) / total_action
+            (2 * math.log(t)) / total_action
         )
 
         return exploit + exploration
@@ -29,6 +29,7 @@ class UCBService:
     def rank_from_list(self, cosine_results: list):
 
         t = self.feedback_repo.count_total_feedback()
+        t_candidate = 5
         results = []
 
         for item in cosine_results:
@@ -40,7 +41,7 @@ class UCBService:
             ucb_score = self.calculate_ucb(
                 reward,
                 total_action,
-                t
+                t_candidate
             )
 
             results.append({
@@ -49,7 +50,8 @@ class UCBService:
                 "cosine_score": item.get("similarity_score"),
                 "reward": reward,
                 "total_action": total_action,
-                "ucb_score": ucb_score
+                "ucb_score": ucb_score,
+                "t_candidate":t_candidate
             })
 
 
