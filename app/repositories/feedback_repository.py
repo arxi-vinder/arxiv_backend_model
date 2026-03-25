@@ -32,9 +32,10 @@ class FeedbackRepository():
     
     def update(self, feedback: Feedback, response: int):
         if feedback.response is None:
-            feedback.response = 1
-        else:
-            feedback.response += 1
+                feedback.response = 0
+
+        if response == 1:
+                feedback.response += 1
 
         self.db.add(feedback)
         self.db.commit()
