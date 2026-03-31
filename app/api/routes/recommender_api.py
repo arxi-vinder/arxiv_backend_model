@@ -30,7 +30,7 @@ async def get_recommendation(
     if not results:
         raise HTTPException(status_code=404, detail="Paper not found")
 
-    cosine_list = results['recommendations'] # type: ignore
+    cosine_list = results['recommendations']  # type: ignore
 
     feedback_repo = FeedbackRepository(db)
 
@@ -42,6 +42,10 @@ async def get_recommendation(
     final_results = ucb_service.rank_from_list(cosine_list)
 
     return {
-        "paper_id": paper_id,
-        "recommendations": final_results
+        "status": "success",
+        "message": "Recommendations retrieved successfully",
+        "data": {
+            "paper_id": paper_id,
+            "recommendations": final_results
+        }
     }

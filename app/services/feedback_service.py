@@ -17,9 +17,9 @@ class FeedbackService():
         paper_id: int
     ) -> Feedback:
         """Ambil cosine , kasi feedback , hitung make skor ucb , ranking """
-        if response not in [1, -1]:
+        if response not in [1, 0]:
             raise ValueError(
-                "Feedback must be 1 (like) or -1 (dislike)"
+                "Feedback must be 1 (like) or 0 (dislike)"
             )
 
 
