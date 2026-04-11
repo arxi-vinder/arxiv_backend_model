@@ -15,7 +15,7 @@ router = APIRouter(
 @router.get("/recommend/{paper_id}")
 async def get_recommendation(
     paper_id: int,
-    top_n: int = 5,
+    top_n: int = 10,
     db: Session = Depends(get_db)
 ):
     repo = PaperRepository(db)
