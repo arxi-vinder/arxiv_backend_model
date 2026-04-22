@@ -36,10 +36,11 @@ async def get_recommendation(
 
     ucb_service = UCBService(
         feedback_repo=feedback_repo,
-        paper_repo=repo
+        paper_repo=repo,
+        cbf_service=service
     )
 
-    final_results = ucb_service.rank_from_list(cosine_list)
+    final_results = ucb_service.rank_from_list(paper_id)
 
     return {
         "status": "success",
