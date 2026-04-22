@@ -1,60 +1,124 @@
 import math
 from app.repositories.feedback_repository import FeedbackRepository
 from app.repositories.paper_repository import PaperRepository
+from app.services.recommendation_service import RecommendationService
 
 class UCBService:
 
-    def __init__(self, feedback_repo:FeedbackRepository, paper_repo:PaperRepository, alpha: float = 2.0):
+    def __init__(
+        self,
+        feedback_repo: FeedbackRepository,
+        paper_repo: PaperRepository,
+        cbf_service: RecommendationService,
+        alpha: float = 2.0
+    ):
         self.feedback_repo = feedback_repo
         self.paper_repo = paper_repo
+        self.cbf_service = cbf_service 
         self.alpha = alpha
 
-    def calculate_ucb(self, reward, total_action, t):
+    def _mean_reward(self, rewards):
+        if not rewards:
+            return 0.0
+        return sum(rewards) / len(rewards)
 
-        
-        if total_action == 0:
-            return float(0) 
+    def calculate_ucb(self, rewards, t):
 
-        reward = float(reward)
-        total_action = float(total_action)
-        t = float(t)
+        s = len(rewards)
 
-        exploit = reward / total_action
+        if s == 0:
+            return 0.0
+
+        t = max(t, 2)
+
+        mean = self._mean_reward(rewards)
+
         exploration = math.sqrt(
-            (2 * math.log(t)) / total_action
+            (2 * math.log(t)) / s
         )
 
-        return exploit + exploration
+        return mean + exploration
 
-    def rank_from_list(self, cosine_results: list):
+    def rank_from_list(self, paper_id: int, top_k: int = 5, candidate_size: int = 20):
+
+        candidate_size = max(candidate_size, top_k)
+
+        cbf_candidates = self.cbf_service.get_recommendations_by_paper_id(
+            paper_id,
+            top_n=candidate_size
+        )["recommendations"]
+
+        if not cbf_candidates:
+            return {
+                "recommendations": [],
+                "all_ranked": []
+            }
+
+        candidate_ids = [item["id"] for item in cbf_candidates]
+
+        
+        feedback_stats = {
+            cid: self.feedback_repo.get_paper_stats(cid)
+            for cid in candidate_ids
+        }
+
 
         t = self.feedback_repo.count_total_feedback()
-        t_candidate = 5
-        results = []
+        t = max(t, 2)
 
-        for item in cosine_results:
+        ranked = []
 
-            reward, total_action = self.feedback_repo.get_paper_stats(
-                item["id"]
-            )
+        for item in cbf_candidates:
+            pid = item["id"]
+            title = item.get("title", "")
 
-            ucb_score = self.calculate_ucb(
-                reward,
-                total_action,
-                t_candidate
-            )
+            reward, total_action = feedback_stats.get(pid, (0, 0))
 
-            results.append({
-                "paper_id": item["id"],
-                "title": item.get("title"),
-                "cosine_score": item.get("similarity_score"),
-                "reward": reward,
-                "total_action": total_action,
-                "ucb_score": ucb_score,
-                "t_candidate":t_candidate
+            
+            if total_action == 0:
+                ranked.append({
+                    "paper_id": pid,
+                    "title": title,
+                    "cosine_score": float(item["similarity_score"]),
+                    "ucb_score": 0.0,
+                    "final_score": 0.3 * float(item["similarity_score"]),
+                    "mean_reward": 0.0,
+                    "views": 0,
+                    "clicks": 0
+                })
+                continue
+            
+            
+            reward = float(reward)
+            total_action = float(total_action)
+            t = float(t)
+            
+
+            mean = reward / total_action
+
+            
+            exploration = math.sqrt((2 * math.log(t)) / total_action)
+
+            ucb_score = mean + exploration
+
+
+            final_score = (0.7 * ucb_score) + (0.3 * float(item["similarity_score"]))
+
+            ranked.append({
+                "paper_id": pid,
+                "title": title,
+                "cosine_score": float(item["similarity_score"]),
+                "ucb_score": float(ucb_score),
+                "final_score": float(final_score),
+                "mean_reward": float(mean),
+                "views": total_action,
+                "clicks": reward
             })
 
 
-        results.sort(key=lambda x: x["ucb_score"], reverse=True)
+        ranked.sort(key=lambda x: x["final_score"], reverse=True)
 
-        return results
+        return {
+            "recommendations": ranked[:top_k],
+            "all_ranked": ranked
+        }
