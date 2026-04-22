@@ -9,14 +9,15 @@ class PaperRepository():
     def __init__(self, db: Session):
         self.db = db
 
-    def getPaper(self , limit:int = 100):
+
+    def getPaper(self, limit: int = 100):
         stmt = select(Paper).limit(limit)
-        return self.db.scalars(
-            stmt
-        ).all()
-    
-    def get_detail_paper(self , id):
-        return self.db.get(
-            Paper,
-            id
-    )
+        return self.db.execute(stmt).all()
+
+
+    def get_detail_paper(self, id: int):
+        return self.db.get(Paper, id)
+
+    def get_abstracts(self, limit: int = 100):
+        stmt = select(Paper.id, Paper.title, Paper.abstract).limit(limit)
+        return self.db.execute(stmt).all()
