@@ -1,8 +1,8 @@
-"""added auto increment on id 
+"""summary table evaluation
 
-Revision ID: 025bac2aaf83
-Revises: a9a5291743f0
-Create Date: 2026-04-26 17:06:13.964216
+Revision ID: e63b65c8496e
+Revises: 025bac2aaf83
+Create Date: 2026-04-26 23:01:05.514255
 
 """
 from typing import Sequence, Union
@@ -12,13 +12,14 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '025bac2aaf83'
-down_revision: Union[str, Sequence[str], None] = 'a9a5291743f0'
+revision: str = 'e63b65c8496e'
+down_revision: Union[str, Sequence[str], None] = '025bac2aaf83'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    """Upgrade schema."""
     pass
 
 
