@@ -3,6 +3,9 @@ from app.db.database import Base
 from sqlalchemy import Column, DateTime, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from app.model.feedback import Feedback
+from app.model.recommendation_log import RecommendationLog
+
 class User(Base):
     __tablename__ = "users"
     
@@ -37,4 +40,5 @@ class User(Base):
         default=datetime.datetime.now
     )
     
-    feedbacks = relationship("Feedback", back_populates="user")
+    feedbacks = relationship(Feedback, back_populates="user")
+    reclogs = relationship(RecommendationLog, back_populates="user")
