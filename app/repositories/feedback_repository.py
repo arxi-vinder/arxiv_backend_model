@@ -42,6 +42,17 @@ class FeedbackRepository():
         self.db.refresh(feedback)
 
         return feedback
+
+    def get_user_liked_paper_ids(self, user_id: int) -> list[int]:
+        liked_rows = (
+            self.db.query(Feedback.paper_id)
+            .filter(
+                Feedback.user_id == user_id,
+                Feedback.response == 1
+            )
+            .all()
+        )
+        return list({row[0] for row in liked_rows})
     
     def count_total_feedback(self) -> int:
         total = self.db.query(func.count(Feedback.id)).scalar()
