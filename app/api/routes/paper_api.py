@@ -1,11 +1,12 @@
 
 import traceback
-from fastapi import APIRouter, Depends, HTTPException,status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session
 
 from app.db.database import get_db
 from app.model.user import User
 from app.repositories.paper_repository import PaperRepository
+from app.schemas.request.paper_request import PaperCreate, PaperBulkCreate, PaperUpdate
 from app.schemas.response.paper_response import PaperResponse
 from app.schemas.response.paper_response_status import PaperResponseStatus
 from app.services import recommendation_service
@@ -49,8 +50,123 @@ def get_papers(db: Session = Depends(get_db)):
             }
         )
 
+@router.post("/create/paper", status_code=status.HTTP_201_CREATED)
+def create_paper(payload: PaperCreate, db: Session = Depends(get_db)):
+    try:
+        repo = PaperRepository(db)
+        service = PaperService(repo)
+        paper = service.create_paper(payload)
+        return {
+            "status": "success",
+            "data": paper
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "status": "error",
+                "error_type": type(e).__name__,
+                "message": str(e),
+                "traceback": traceback.format_exc()
+            }
+        )
+
+
+@router.post("/papers/bulk", status_code=status.HTTP_201_CREATED)
+def create_papers_bulk(payload: PaperBulkCreate, db: Session = Depends(get_db)):
+    try:
+        repo = PaperRepository(db)
+        service = PaperService(repo)
+        papers = service.create_papers_bulk(payload)
+        return {
+            "status": "success",
+            "inserted": len(papers),
+            "data": papers
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "status": "error",
+                "error_type": type(e).__name__,
+                "message": str(e),
+                "traceback": traceback.format_exc()
+            }
+        )
+
+
+@router.put("/update/paper/{id}")
+def update_paper(id: int, payload: PaperUpdate, db: Session = Depends(get_db)):
+    try:
+        repo = PaperRepository(db)
+        service = PaperService(repo)
+
+        updated = service.update_paper(id, payload)
+
+        if not updated:
+            raise HTTPException(
+                status_code=404,
+                detail={
+                    "status": "error",
+                    "message": f"Paper with id {id} not found"
+                }
+            )
+
+        return {
+            "status": "success",
+            "data": updated
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "status": "error",
+                "error_type": type(e).__name__,
+                "message": str(e),
+                "traceback": traceback.format_exc()
+            }
+        )
+
+
+@router.delete("/delete/paper/{id}")
+def delete_paper(id: int, db: Session = Depends(get_db)):
+    try:
+        repo = PaperRepository(db)
+        service = PaperService(repo)
+
+        deleted = service.delete_paper(id)
+
+        if not deleted:
+            raise HTTPException(
+                status_code=404,
+                detail={
+                    "status": "error",
+                    "message": f"Paper with id {id} not found"
+                }
+            )
+
+        return {
+            "status": "success",
+            "message": f"Paper with id {id} has been deleted"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "status": "error",
+                "error_type": type(e).__name__,
+                "message": str(e),
+                "traceback": traceback.format_exc()
+            }
+        )
+
+
 @router.get("/paper/{id}")
-def get_detail_paper(id,db:Session = Depends(get_db)):
+def get_detail_paper(id, db: Session = Depends(get_db)):
     
     try:
         repo = PaperRepository(
