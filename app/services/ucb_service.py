@@ -28,116 +28,21 @@ class UCBService:
         reward = float(reward)
         total_action = float(total_action)
 
-        # ✅ sesuai Excel: kalau belum ada data → 0
+
         if total_action == 0:
             return 0.0
 
         t = float(max(t, 2))
 
-        # ❗ TANPA smoothing
         mean = self._mean_reward(reward, total_action)
 
-        # ❗ pakai LOG10 (Excel)
         exploration = self.alpha * math.sqrt(
             (math.log10(t)) / total_action
         )
 
         return mean + exploration
 
-    # ================= EVALUATION ================= #
 
-    def precision_at_k(self, ranked_items, k: int):
-        if k <= 0:
-            return 0.0
-
-        top_k = ranked_items[:k]
-        if not top_k:
-            return 0.0
-
-        relevant = sum(
-            1 for item in top_k if item.get("is_relevant", 0) == 1
-        )
-
-        return round(relevant / k, 2)
-
-    def recall_at_k(self, ranked_items, k: int):
-        if k <= 0 or not ranked_items:
-            return 0.0
-
-        total_relevant = sum(
-            1 for item in ranked_items if item.get("is_relevant", 0) == 1
-        )
-
-        if total_relevant == 0:
-            return 0.0
-
-        top_k = ranked_items[:k]
-
-        relevant_in_k = sum(
-            1 for item in top_k if item.get("is_relevant", 0) == 1
-        )
-
-        return round(relevant_in_k / total_relevant, 2)
-
-    def average_precision(self, ranked_items):
-        if not ranked_items:
-            return 0.0
-
-        relevant_count = 0
-        precision_sum = 0.0
-
-        for k, item in enumerate(ranked_items, start=1):
-            if item.get("is_relevant", 0) == 1:
-                relevant_count += 1
-                precision_k = self.precision_at_k(ranked_items, k)
-                precision_sum += precision_k
-
-        if relevant_count == 0:
-            return 0.0
-
-        return round(precision_sum / relevant_count, 3)
-
-    def mean_average_precision(self, ranked_items_list):
-        if not ranked_items_list:
-            return 0.0
-
-        ap_sum = sum(self.average_precision(items) for items in ranked_items_list)
-        return round(ap_sum / len(ranked_items_list), 3)
-
-    def f1_at_k(self, ranked_items, k: int):
-        precision = self.precision_at_k(ranked_items, k)
-        recall = self.recall_at_k(ranked_items, k)
-
-        if (precision + recall) == 0:
-            return 0.0
-
-        return round(2 * (precision * recall) / (precision + recall), 2)
-
-    def precision_multi_k(self, ranked_items):
-        return {
-            "p@1": self.precision_at_k(ranked_items, 1),
-            "p@2": self.precision_at_k(ranked_items, 2),
-            "p@3": self.precision_at_k(ranked_items, 3),
-            "p@4": self.precision_at_k(ranked_items, 4),
-        }
-
-    def recall_multi_k(self, ranked_items):
-        return {
-            "r@1": self.recall_at_k(ranked_items, 1),
-            "r@2": self.recall_at_k(ranked_items, 2),
-            "r@3": self.recall_at_k(ranked_items, 3),
-            "r@4": self.recall_at_k(ranked_items, 4),
-        }
-
-    def f1_multi_k(self, ranked_items):
-        return {
-            "f1@1": self.f1_at_k(ranked_items, 1),
-            "f1@2": self.f1_at_k(ranked_items, 2),
-            "f1@3": self.f1_at_k(ranked_items, 3),
-            "f1@4": self.f1_at_k(ranked_items, 4),
-        }
-
-    # ================= RANKING ================= #
 
     def rank_from_list(self, paper_id: int, top_k: int = 5, candidate_size: int = 20):
         candidate_size = max(candidate_size, top_k)
@@ -150,7 +55,6 @@ class UCBService:
         if not cbf_candidates:
             return {"data": [], "precision": {}}
 
-        # ✅ remove duplicate
         seen = set()
         unique_candidates = []
 
@@ -166,7 +70,6 @@ class UCBService:
             for cid in candidate_ids
         }
 
-        # ❗ sesuai Excel
         t = self.feedback_repo.count_total_feedback() + 1
 
         ranked = []
@@ -188,23 +91,12 @@ class UCBService:
                 "ucb_score": float(ucb_score),
                 "views": int(total_action),
                 "clicks": int(reward),
-                "ctr": round(ctr, 3),
                 "t": t,
-                "is_relevant": 1 if ctr >= 0.2 else 0
             })
 
 
         ranked.sort(key=lambda x: x["ucb_score"], reverse=True)
 
-        precision_scores = self.precision_multi_k(ranked)
-        recall_scores = self.recall_multi_k(ranked)
-        f1_scores = self.f1_multi_k(ranked)
-        ap_score = self.average_precision(ranked)
-
         return {
             "data": ranked[:top_k],
-            "precision": precision_scores,
-            "recall": recall_scores,
-            "f1_score": f1_scores,
-            "ap_score": ap_score
         }
