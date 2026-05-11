@@ -44,7 +44,7 @@ class UCBService:
 
 
 
-    def rank_from_list(self, paper_id: int, top_k: int = 5, candidate_size: int = 20):
+    def rank_from_list(self, paper_id: int, top_k: int = 10, candidate_size: int = 20):
         candidate_size = max(candidate_size, top_k)
 
         cbf_candidates = self.cbf_service.get_recommendations_by_paper_id(
