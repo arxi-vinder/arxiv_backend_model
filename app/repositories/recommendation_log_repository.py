@@ -133,3 +133,11 @@ class RecommendationLogRepository:
         except SQLAlchemyError:
             self.db.rollback()
             raise
+
+    def get_unique_user_count(self):
+        """Get count of unique users in recommendation_logs table"""
+        try:
+            from sqlalchemy import func
+            return self.db.query(func.count(func.distinct(RecommendationLog.user_id))).scalar() or 0
+        except SQLAlchemyError:
+            return 0
