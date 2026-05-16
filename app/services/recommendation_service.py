@@ -2,7 +2,9 @@ import math
 from collections import Counter, defaultdict
 
 from app.repositories.paper_repository import PaperRepository
-
+import re
+from nltk.corpus import stopwords
+from nltk.stem import PorterStemmer
 
 class RecommendationService:
 
@@ -12,24 +14,77 @@ class RecommendationService:
         self.cosine_sim_matrix = []
         self._build_model()
 
+
+    def preprocess(self, text):
+
+        stemmer = PorterStemmer()
+        stop_words = set(stopwords.words("english"))
+        text = text.lower()
+        text = re.sub(r'[^a-zA-Z\s]', '', text)
+        tokens = text.split()
+
+        # stopword removal + stemming
+        tokens = [
+            stemmer.stem(word)
+            for word in tokens
+            if word not in stop_words
+        ]
+
+        return tokens
+
     def _compute_tf(self, tokens):
+
+        print("\n=== TERM FREQUENCY (TF) ===")
+        print("TOKENS:", tokens)
+
         tf = Counter(tokens)
         total = len(tokens)
-        return {word: count / total for word, count in tf.items()}
+
+        tf_result = {
+            word: count / total
+            for word, count in tf.items()
+        }
+
+        for word, value in sorted(tf_result.items()):
+            print(f"TF[{word}] = {value:.6f}")
+
+        return tf_result
+
 
     def _compute_idf(self, docs_tokens):
+
+        print("\n=== INVERSE DOCUMENT FREQUENCY (IDF) ===")
+
         N = len(docs_tokens)
+
+        print("TOTAL DOCUMENT:", N)
+
         df = defaultdict(int)
 
-        for tokens in docs_tokens:
+        for idx, tokens in enumerate(docs_tokens):
+
+            print(f"\n[DOC {idx}]")
+            print(tokens)
+
             for word in set(tokens):
                 df[word] += 1
 
-        return {
-            word: math.log((N + 1) / (freq + 1)) + 1 
+        print("\n=== DOCUMENT FREQUENCY ===")
+
+        for word, freq in sorted(df.items()):
+            print(f"DF[{word}] = {freq}")
+
+        idf_result = {
+            word: math.log((N + 1) / (freq + 1)) + 1
             for word, freq in df.items()
         }
 
+        print("\n=== HASIL IDF ===")
+
+        for word, value in sorted(idf_result.items()):
+            print(f"IDF[{word}] = {value:.6f}")
+
+        return idf_result
     def _compute_tfidf(self, docs_tokens):
         idf = self._compute_idf(docs_tokens)
         tfidf_vectors = []
@@ -61,7 +116,6 @@ class RecommendationService:
             self.cosine_sim_matrix = []
             return
 
-
         self.datas = [
             {
                 "id": p.id,
@@ -72,25 +126,47 @@ class RecommendationService:
             if p.abstract
         ]
 
+        print("\n=== ABSTRACT YANG DIPROSES ===")
 
-        docs_tokens = [
-            p.abstract.split()
-            for p in papers
-            if p.abstract
-        ]
+        docs_tokens = []
 
+        for idx, p in enumerate(papers):
+            if p.abstract:
+                print(f"\n[DOC {idx}]")
+                print("TITLE     :", p.title)
+                print("ABSTRACT  :", p.abstract)
+
+                tokens = self.preprocess(p.abstract)
+
+                print("TOKENS    :", tokens)
+
+                docs_tokens.append(tokens)
+
+        print("\n=== TF-IDF VECTORIZATION ===")
 
         tfidf_vectors = self._compute_tfidf(docs_tokens)
 
+        for idx, vector in enumerate(tfidf_vectors):
+            print(f"\n[TF-IDF DOC {idx}]")
+
+            for word, value in sorted(vector.items()):
+                print(f"{word:<20} -> {value:.6f}")
 
         n = len(tfidf_vectors)
         cosine_matrix = [[0.0] * n for _ in range(n)]
+
+        print("\n=== COSINE SIMILARITY ===")
 
         for i in range(n):
             for j in range(n):
                 cosine_matrix[i][j] = self._cosine_similarity(
                     tfidf_vectors[i],
                     tfidf_vectors[j]
+                )
+
+                print(
+                    f"Similarity Doc-{i} vs Doc-{j} "
+                    f"= {cosine_matrix[i][j]:.6f}"
                 )
 
         self.cosine_sim_matrix = cosine_matrix
