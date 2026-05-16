@@ -7,11 +7,14 @@ from app.db.database import get_db
 from app.model.user import User
 from app.repositories.feedback_repository import FeedbackRepository
 from app.repositories.recommendation_log_repository import RecommendationLogRepository
+from app.repositories.paper_repository import PaperRepository
 from app.schemas.request.feedback_user_request import FeedbackRequest
 from app.schemas.request.recommendation_log_request import RecommendationLogRequest
 from app.services.feedback_service import FeedbackService
 from app.services.paper_service import PaperService
 from app.services.recommendation_log_service import RecommendationLogService
+from app.services.recommendation_service import RecommendationService
+from app.services.ucb_service import UCBService
 from app.utils.jwt import get_current_user
 
 
@@ -40,25 +43,21 @@ def save_feedback(
 
         existing_log = log_repo.get_latest_by_user(current_user.id)
 
-        
         new_relevant = [request.paper_id] if request.response == 1 else []
 
         if existing_log:
-            current_relevants = list(existing_log.relevants or []) # type: ignore
-
-            
+            current_relevants = list(existing_log.relevants or [])  # type: ignore
             merged_relevants = sorted(set(current_relevants) | set(new_relevant))
 
-            log = log_repo.update_log(
-                int(existing_log.id), # type: ignore
-                recommendations=existing_log.recommendations, # type: ignore
+            log = log_repo.update_relevants(
+                existing_log.id,  # type: ignore
                 relevants=merged_relevants
             )
 
             if log is None:
                 log = log_service.create_log(
                     user_id=current_user.id,
-                    recommendations=existing_log.recommendations, # type: ignore
+                    recommendations=existing_log.recommendations,  # type: ignore
                     relevants=merged_relevants
                 )
         else:
@@ -70,12 +69,18 @@ def save_feedback(
 
         return {
             "status": "success",
-            "message": "Feedback & log saved successfully",
+            "message": "Feedback saved successfully",
             "data": {
-                "feedback": result,
+                "feedback": {
+                    "id": result.id,
+                    "paper_id": result.paper_id,
+                    "response": result.response,
+                    "created_at": result.created_at
+                },
                 "log": {
                     "id": log.id,
                     "user_id": log.user_id,
+                    "recommendations": log.recommendations,
                     "relevants": log.relevants,
                     "created_at": log.created_at
                 }
