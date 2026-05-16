@@ -15,7 +15,7 @@ router = APIRouter(
 @router.get("/recommend/{paper_id}")
 async def get_recommendation(
     paper_id: int,
-    top_n: int = 10,
+    top_n: int = 5,
     db: Session = Depends(get_db)
 ):
     repo = PaperRepository(db)
@@ -29,8 +29,6 @@ async def get_recommendation(
 
     if not results:
         raise HTTPException(status_code=404, detail="Paper not found")
-
-    cosine_list = results['recommendations']  # type: ignore
 
     feedback_repo = FeedbackRepository(db)
 
