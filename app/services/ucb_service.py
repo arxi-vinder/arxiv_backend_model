@@ -100,3 +100,62 @@ class UCBService:
         return {
             "data": ranked[:top_k],
         }
+
+    def refresh_ucb_scores(self, paper_id: int, top_k: int = 10, candidate_size: int = 20):
+        """
+        Refresh dan recalculate UCB scores berdasarkan feedback terbaru.
+        Method ini akan fetch ulang stats dari feedback repo dan recalculate UCB scores.
+        """
+        candidate_size = max(candidate_size, top_k)
+
+        cbf_candidates = self.cbf_service.get_recommendations_by_paper_id(
+            paper_id,
+            top_n=candidate_size
+        )["recommendations"]
+
+        if not cbf_candidates:
+            return {"data": [], "message": "No candidates found for given paper"}
+
+        seen = set()
+        unique_candidates = []
+
+        for item in cbf_candidates:
+            if item["id"] not in seen:
+                seen.add(item["id"])
+                unique_candidates.append(item)
+
+        candidate_ids = [item["id"] for item in unique_candidates]
+
+        feedback_stats = {
+            cid: self.feedback_repo.get_paper_stats(cid)
+            for cid in candidate_ids
+        }
+
+        t = self.feedback_repo.count_total_feedback() + 1
+
+        ranked = []
+
+        for item in unique_candidates:
+            pid = item["id"]
+            title = item.get("title", "")
+
+            reward, total_action = feedback_stats.get(pid, (0, 0))
+
+            ucb_score = self.calculate_ucb(reward, total_action, t)
+
+            ranked.append({
+                "paper_id": pid,
+                "title": title,
+                "cosine_score": float(item["similarity_score"]),
+                "ucb_score": float(ucb_score),
+                "views": int(total_action),
+                "clicks": int(reward),
+                "t": t,
+            })
+
+        ranked.sort(key=lambda x: x["ucb_score"], reverse=True)
+
+        return {
+            "data": ranked[:top_k],
+            "message": "UCB scores refreshed successfully"
+        }
