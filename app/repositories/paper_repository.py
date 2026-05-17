@@ -1,4 +1,6 @@
-from sqlalchemy import select
+from datetime import datetime
+from typing import Optional
+from sqlalchemy import select, desc, asc
 from sqlmodel import Session
 
 from app.model.paper import Paper
@@ -22,6 +24,14 @@ class PaperRepository():
     def get_abstracts(self, limit: int = 100):
         stmt = select(Paper.id, Paper.title, Paper.abstract).limit(limit)
         return self.db.execute(stmt).all()
+
+    def get_abstracts_batch(self, offset: int = 0, batch_size: int = 100):
+        stmt = select(Paper.id, Paper.title, Paper.abstract).offset(offset).limit(batch_size)
+        return self.db.execute(stmt).all()
+
+    def get_total_papers_count(self) -> int:
+        stmt = select(Paper.id)
+        return len(self.db.execute(stmt).scalars().all())
 
     def insert_paper(self, paper: Paper) -> Paper:
         self.db.add(paper)
@@ -54,3 +64,27 @@ class PaperRepository():
         self.db.commit()
         self.db.refresh(paper)
         return paper
+
+    def get_papers_by_category(self, category: str):
+        stmt = select(Paper).where(Paper.category == category)
+        return self.db.execute(stmt).scalars().all()
+
+    def get_all_categories(self):
+        stmt = select(Paper.category.distinct()).order_by(Paper.category)
+        return self.db.execute(stmt).scalars().all()
+
+    def get_papers_with_filter(self, limit: int = 100, start_date: Optional[datetime] = None, end_date: Optional[datetime] = None, sort_order: str = "newest"):
+        stmt = select(Paper)
+
+        if start_date:
+            stmt = stmt.where(Paper.created_at >= start_date)
+        if end_date:
+            stmt = stmt.where(Paper.created_at <= end_date)
+
+        if sort_order == "newest":
+            stmt = stmt.order_by(desc(Paper.created_at))
+        elif sort_order == "oldest":
+            stmt = stmt.order_by(asc(Paper.created_at))
+
+        stmt = stmt.limit(limit)
+        return self.db.execute(stmt).scalars().all()

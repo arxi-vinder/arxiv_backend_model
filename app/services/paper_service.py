@@ -1,4 +1,6 @@
 
+from datetime import datetime
+from typing import Optional
 from app.model.paper import Paper
 from app.repositories.paper_repository import PaperRepository
 from app.schemas.request.paper_request import PaperCreate, PaperBulkCreate, PaperUpdate
@@ -46,3 +48,12 @@ class PaperService():
             for item in data.papers
         ]
         return self.repo.insert_papers_bulk(papers)
+
+    def get_papers_by_category(self, category: str):
+        return self.repo.get_papers_by_category(category)
+
+    def get_all_categories(self):
+        return self.repo.get_all_categories()
+
+    def get_papers_with_filter(self, limit: int = 100, start_date: Optional[datetime] = None, end_date: Optional[datetime] = None, sort_order: str = "newest"):
+        return self.repo.get_papers_with_filter(limit, start_date, end_date, sort_order)
