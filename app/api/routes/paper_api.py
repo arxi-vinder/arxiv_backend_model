@@ -1,5 +1,7 @@
 
 import traceback
+from datetime import datetime
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session
 
@@ -20,12 +22,18 @@ router = APIRouter(
 
 
 @router.get("/papers", response_model=PaperResponseStatus)
-def get_papers(db: Session = Depends(get_db)):
+def get_papers(
+    db: Session = Depends(get_db),
+    limit: int = 100,
+    start_date: Optional[datetime] = None,
+    end_date: Optional[datetime] = None,
+    sort: str = "newest"
+):
     try:
         repo = PaperRepository(db)
         paper = PaperService(repo)
 
-        datas = paper.getPaperService()
+        datas = paper.get_papers_with_filter(limit, start_date, end_date, sort)
 
         if not datas:
             return {
@@ -167,16 +175,16 @@ def delete_paper(id: int, db: Session = Depends(get_db)):
 
 @router.get("/paper/{id}")
 def get_detail_paper(id, db: Session = Depends(get_db)):
-    
+
     try:
         repo = PaperRepository(
             db
         )
-        
+
         paper_detail  = PaperService(
             repo
         )
-        
+
         found_paper = paper_detail.get_paper_id(id)
         return {
             "status":"success",
@@ -191,4 +199,66 @@ def get_detail_paper(id, db: Session = Depends(get_db)):
                     "message": str(e),
                     "traceback": traceback.format_exc()
                 }
+        )
+
+
+@router.get("/papers/category/{category}", response_model=PaperResponseStatus)
+def get_papers_by_category(category: str, db: Session = Depends(get_db)):
+    try:
+        repo = PaperRepository(db)
+        service = PaperService(repo)
+
+        papers = service.get_papers_by_category(category)
+
+        if not papers:
+            return {
+                "status": "success",
+                "message": f"No papers found for category: {category}",
+                "data": []
+            }
+
+        return {
+            "status": "success",
+            "data": papers
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "status": "error",
+                "error_type": type(e).__name__,
+                "message": str(e),
+                "traceback": traceback.format_exc()
+            }
+        )
+
+
+@router.get("/categories")
+def get_categories(db: Session = Depends(get_db)):
+    try:
+        repo = PaperRepository(db)
+        service = PaperService(repo)
+
+        categories = service.get_all_categories()
+
+        if not categories:
+            return {
+                "status": "success",
+                "message": "No categories found",
+                "data": []
+            }
+
+        return {
+            "status": "success",
+            "data": categories
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "status": "error",
+                "error_type": type(e).__name__,
+                "message": str(e),
+                "traceback": traceback.format_exc()
+            }
         )
