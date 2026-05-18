@@ -1,6 +1,7 @@
 from sqlmodel import Session
 
 from app.model.evaluation_res import EvaluationResult
+from app.model.user import User
 from sqlalchemy import func
 
 class EvaluationRepository():
@@ -29,6 +30,20 @@ class EvaluationRepository():
 
     def get_all(self):
         return self.db.query(EvaluationResult).all()
+
+    def get_all_with_username(self):
+        """Get all evaluation results with username"""
+        return self.db.query(
+            EvaluationResult.id,
+            EvaluationResult.user_id,
+            User.username,
+            EvaluationResult.precision,
+            EvaluationResult.recall,
+            EvaluationResult.f1_score,
+            EvaluationResult.mean_average_precision,
+            EvaluationResult.k,
+            EvaluationResult.created_at
+        ).join(User, EvaluationResult.user_id == User.id).all()
 
     def get_by_user(self, user_id: int):
         return (
