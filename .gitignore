@@ -5,3 +5,5 @@
 .env
 # Ignore Jupyter notebook files
 *.ipynb
+# Ignore vectorization cache files
+app/cache/vectorization/
