@@ -203,13 +203,23 @@ def get_detail_paper(id, db: Session = Depends(get_db)):
 
 
 @router.get("/papers/category/{category}", response_model=PaperResponseStatus)
-def get_papers_by_category(category: str, db: Session = Depends(get_db)):
+def get_papers_by_category(
+    category: str, 
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     try:
         repo = PaperRepository(db)
         service = PaperService(repo)
 
         papers = service.get_papers_by_category(category)
 
+        if not current_user:
+            return{
+                "status":"false",
+                "message":"Login Dahulu"
+            }
+        
         if not papers:
             return {
                 "status": "success",
