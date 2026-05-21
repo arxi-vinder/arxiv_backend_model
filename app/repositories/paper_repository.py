@@ -88,3 +88,7 @@ class PaperRepository():
 
         stmt = stmt.limit(limit)
         return self.db.execute(stmt).scalars().all()
+
+    def search_papers_by_name(self, name: str, limit: int = 100):
+        stmt = select(Paper).where(Paper.title.ilike(f"%{name}%")).limit(limit)
+        return self.db.execute(stmt).scalars().all()

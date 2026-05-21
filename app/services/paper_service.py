@@ -57,3 +57,6 @@ class PaperService():
 
     def get_papers_with_filter(self, limit: int = 100, start_date: Optional[datetime] = None, end_date: Optional[datetime] = None, sort_order: str = "newest"):
         return self.repo.get_papers_with_filter(limit, start_date, end_date, sort_order)
+
+    def search_papers_by_name(self, name: str, limit: int = 100):
+        return self.repo.search_papers_by_name(name, limit)

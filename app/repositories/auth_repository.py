@@ -1,3 +1,4 @@
+from sqlalchemy import func
 from sqlmodel import Session
 from sqlalchemy.orm import Session
 from app.model.user import User
