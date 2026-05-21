@@ -4,6 +4,7 @@ from app.db.database import get_db
 from app.repositories.evaluation_repository import EvaluationRepository
 from app.services.evaluation_service import EvaluationService
 from app.repositories.recommendation_log_repository import RecommendationLogRepository
+from app.model.user import User
 
 router = APIRouter(prefix="/api/v1/evaluation")
 
@@ -20,7 +21,7 @@ def sync_evaluation(db: Session = Depends(get_db)):
         repo = EvaluationRepository(db)
         service = EvaluationService(repo)
 
-        K_VALUES = [1, 3, 5]
+        K_VALUES = [1,2, 3,4, 5]
         user_k_metrics = {}
 
         for log in logs:
@@ -59,7 +60,6 @@ def sync_evaluation(db: Session = Depends(get_db)):
                 avg_r = sum(metrics["r"]) / n
                 avg_ap = sum(metrics["ap"]) / n
 
-                # F1
                 if avg_p + avg_r > 0:
                     f1 = 2 * (avg_p * avg_r) / (avg_p + avg_r)
                 else:
@@ -100,26 +100,34 @@ def get_precision(db: Session = Depends(get_db)):
     try:
         repo = EvaluationRepository(db)
         service = EvaluationService(repo)
-        results = service.eval_repo.get_all()
+        results = repo.get_all_with_username()
 
         user_map = {}
 
         for r in results:
             user_id = r.user_id
+            username = r.username
 
             if user_id not in user_map:
                 user_map[user_id] = {
                     "user_id": user_id,
+                    "username": username,
                     "k1": 0,
+                    "k2":0,
                     "k3": 0,
+                    "k4":0,
                     "k5": 0
                 }
 
             if r.k == 1:
                 user_map[user_id]["k1"] = r.precision
+            elif r.k == 2:
+                user_map[user_id]["k2"] = r.precision
             elif r.k == 3:
                 user_map[user_id]["k3"] = r.precision
             elif r.k == 4:
+                user_map[user_id]["k4"] = r.precision
+            elif r.k == 5:
                 user_map[user_id]["k5"] = r.precision
 
         return list(user_map.values())
@@ -134,27 +142,35 @@ def get_recall(db: Session = Depends(get_db)):
     try:
         repo = EvaluationRepository(db)
         service = EvaluationService(repo)
-        results = service.eval_repo.get_all()
+        results = repo.get_all_with_username()
 
 
         user_map = {}
 
         for r in results:
             user_id = r.user_id
+            username = r.username
 
             if user_id not in user_map:
                 user_map[user_id] = {
                     "user_id": user_id,
+                    "username": username,
                     "k1": 0,
+                    "k2":0,
                     "k3": 0,
+                    "k4":0,
                     "k5": 0
                 }
 
             if r.k == 1:
                 user_map[user_id]["k1"] = r.recall
+            elif r.k == 2:
+                user_map[user_id]["k2"] =r.recall
             elif r.k == 3:
                 user_map[user_id]["k3"] = r.recall
             elif r.k == 4:
+                user_map[user_id]["k4"] = r.recall
+            elif r.k == 5:
                 user_map[user_id]["k5"] = r.recall
 
         return list(user_map.values())
@@ -169,26 +185,34 @@ def get_f1(db: Session = Depends(get_db)):
     try:
         repo = EvaluationRepository(db)
         service = EvaluationService(repo)
-        results = service.eval_repo.get_all()
+        results = repo.get_all_with_username()
 
 
         user_map = {}
 
         for r in results:
             user_id = r.user_id
+            username = r.username
 
             if user_id not in user_map:
                 user_map[user_id] = {
                     "user_id": user_id,
+                    "username": username,
                     "k1": 0,
+                    "k2":0,
                     "k3": 0,
+                    "k4":0,
                     "k5": 0
                 }
 
             if r.k == 1:
                 user_map[user_id]["k1"] = r.f1_score
+            elif r.k == 2:
+                user_map[user_id]["k2"] = r.f1_score
             elif r.k == 3:
                 user_map[user_id]["k3"] = r.f1_score
+            elif r.k == 4:
+                user_map[user_id]["k4"] = r.f1_score
             elif r.k == 5:
                 user_map[user_id]["k5"] = r.f1_score
 
@@ -254,11 +278,17 @@ def get_map(db: Session = Depends(get_db)):
 
         average_precision_per_user = []
 
+        # Get username for each user
+        users = db.query(User.id, User.username).all()
+        user_map_username = {u.id: u.username for u in users}
+
         for user_id, values in user_ap_map.items():
             ap_user = sum(values) / len(values) if values else 0
+            username = user_map_username.get(user_id, "Unknown")
 
             average_precision_per_user.append({
                 "user_id": user_id,
+                "username": username,
                 "average_precision": round(ap_user, 4)
             })
 
@@ -279,11 +309,58 @@ def get_map(db: Session = Depends(get_db)):
             map_k_result[f"map@{k}"] = round(map_k, 5)
 
         return {
-            "mean_average_precision": round(mean_ap, 5),  
-            "map_at_k": map_k_result,                    
+            "mean_average_precision": round(mean_ap, 5),
+            "map_at_k": map_k_result,
             "average_precision_per_user": average_precision_per_user,
             "total_user": len(average_precision_per_user)
         }
+
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@router.get("/average-metrics")
+def get_average_metrics(db: Session = Depends(get_db)):
+    """
+    Get average evaluation metrics based on:
+    - Sum of metrics from evaluation_results table
+    - Divided by count of unique users in recommendation_logs table
+    """
+    try:
+        log_repo = RecommendationLogRepository(db)
+        eval_repo = EvaluationRepository(db)
+        service = EvaluationService(eval_repo, log_repo)
+
+        result = service.calculate_average_metrics_from_db()
+
+        if result is None:
+            raise HTTPException(status_code=400, detail="Repository not initialized")
+
+        return result
+
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@router.get("/average-metrics-by-k")
+def get_average_metrics_by_k(db: Session = Depends(get_db)):
+    """
+    Get average evaluation metrics for each k value.
+    Returns average precision, recall, f1_score, and map for each k (k=1, k=3, k=5, etc)
+    """
+    try:
+        log_repo = RecommendationLogRepository(db)
+        eval_repo = EvaluationRepository(db)
+        service = EvaluationService(eval_repo, log_repo)
+
+        result = service.calculate_average_metrics_by_k()
+
+        if result is None:
+            raise HTTPException(status_code=400, detail="Repository not initialized")
+
+        return result
 
     except Exception as e:
         print(e)

@@ -7,3 +7,6 @@ class PaperResponse(BaseModel):
     title: str
     abstract: Optional[str]
     category: str
+
+    class Config:
+        orm_mode = True
