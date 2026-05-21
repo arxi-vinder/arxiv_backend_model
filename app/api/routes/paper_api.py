@@ -272,3 +272,39 @@ def get_categories(db: Session = Depends(get_db)):
                 "traceback": traceback.format_exc()
             }
         )
+
+
+@router.get("/papers/search", response_model=PaperResponseStatus)
+def search_papers_by_name(
+    name: str,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    try:
+        repo = PaperRepository(db)
+        service = PaperService(repo)
+
+        papers = service.search_papers_by_name(name, limit)
+
+        if not papers:
+            return {
+                "status": "success",
+                "message": f"No papers found with name: {name}",
+                "data": []
+            }
+
+        return {
+            "status": "success",
+            "data": papers
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "status": "error",
+                "error_type": type(e).__name__,
+                "message": str(e),
+                "traceback": traceback.format_exc()
+            }
+        )
