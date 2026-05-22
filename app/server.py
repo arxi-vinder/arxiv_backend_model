@@ -1,9 +1,19 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
+import nltk
 
 from app.api.routes import auth_api, eval_result, feedback_api, paper_api, recommender_api
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Download NLTK data on startup
+    nltk.download('stopwords', quiet=True)
+    nltk.download('punkt', quiet=True)
+    nltk.download('punkt_tab', quiet=True)
+    yield
+
+app = FastAPI(lifespan=lifespan)
 
 # ✅ CORS HARUS DI SINI
 app.add_middleware(
