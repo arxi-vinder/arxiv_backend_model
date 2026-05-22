@@ -44,7 +44,7 @@ except ValueError:
 
 DATABASE_URL = (
     f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}"
-    f"@localhost:{DB_PORT}/{DB_NAME}"
+    f"@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 )
 
 logger.info(f"DATABASE_URL: {DATABASE_URL}")
