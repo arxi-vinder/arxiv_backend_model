@@ -2,6 +2,7 @@
 import traceback
 from datetime import datetime
 from typing import Optional
+from urllib.parse import unquote
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session
 
@@ -204,7 +205,7 @@ def get_detail_paper(id, db: Session = Depends(get_db)):
 
 @router.get("/papers/category/{category}", response_model=PaperResponseStatus)
 def get_papers_by_category(
-    category: str, 
+    category: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -212,7 +213,8 @@ def get_papers_by_category(
         repo = PaperRepository(db)
         service = PaperService(repo)
 
-        papers = service.get_papers_by_category(category)
+        decoded_category = unquote(category)
+        papers = service.get_papers_by_category(decoded_category)
 
         if not current_user:
             return{
