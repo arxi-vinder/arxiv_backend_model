@@ -240,8 +240,8 @@ def get_map(db: Session = Depends(get_db)):
 
         user_ap_map = {}
 
-        
-        K_VALUES = [1, 3, 5]
+
+        K_VALUES = [1, 2, 3, 4, 5]
         user_ap_map_k = {}  # {user_id: {k: []}}
 
         for log in logs:
@@ -282,18 +282,20 @@ def get_map(db: Session = Depends(get_db)):
         users = db.query(User.id, User.username).all()
         user_map_username = {u.id: u.username for u in users}
 
-        for user_id, values in user_ap_map.items():
-            ap_user = sum(values) / len(values) if values else 0
+        for user_id in user_ap_map_k:
             username = user_map_username.get(user_id, "Unknown")
+            ap_at_k = {}
+
+            for k in K_VALUES:
+                values = user_ap_map_k[user_id][k]
+                ap_user_k = sum(values) / len(values) if values else 0
+                ap_at_k[f"k{k}"] = round(ap_user_k, 4)
 
             average_precision_per_user.append({
                 "user_id": user_id,
                 "username": username,
-                "average_precision": round(ap_user, 4)
+                "ap_at_k": ap_at_k
             })
-
-        all_user_ap = [u["average_precision"] for u in average_precision_per_user]
-        mean_ap = sum(all_user_ap) / len(all_user_ap) if all_user_ap else 0
 
         map_k_result = {}
 
@@ -306,10 +308,16 @@ def get_map(db: Session = Depends(get_db)):
                 all_ap_k.append(ap_user_k)
 
             map_k = sum(all_ap_k) / len(all_ap_k) if all_ap_k else 0
-            map_k_result[f"map@{k}"] = round(map_k, 5)
+            map_k_result[f"map@{k}"] = round(map_k, 4)
+
+        # Calculate overall mean AP
+        all_user_ap = []
+        for user in average_precision_per_user:
+            all_user_ap.extend(user["ap_at_k"].values())
+        mean_ap = sum(all_user_ap) / len(all_user_ap) if all_user_ap else 0
 
         return {
-            "mean_average_precision": round(mean_ap, 5),
+            "mean_average_precision": round(mean_ap, 4),
             "map_at_k": map_k_result,
             "average_precision_per_user": average_precision_per_user,
             "total_user": len(average_precision_per_user)
