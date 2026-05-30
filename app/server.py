@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import nltk
 
-from app.api.routes import auth_api, eval_result, feedback_api, paper_api, recommender_api
+from app.api.routes import admin_api, auth_api, eval_result, feedback_api, paper_api, recommender_api
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -40,3 +40,4 @@ app.include_router(eval_result.router)
 app.include_router(recommender_api.router)
 app.include_router(auth_api.router)
 app.include_router(feedback_api.router)
+app.include_router(admin_api.router)
