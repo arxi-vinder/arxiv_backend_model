@@ -1,6 +1,7 @@
+from ast import stmt
 from datetime import datetime
 from typing import Optional
-from sqlalchemy import select, desc, asc
+from sqlalchemy import and_, select, desc, asc
 from sqlmodel import Session
 
 from app.model.paper import Paper
@@ -90,5 +91,16 @@ class PaperRepository():
         return self.db.execute(stmt).scalars().all()
 
     def search_papers_by_name(self, name: str, limit: int = 100):
-        stmt = select(Paper).where(Paper.title.ilike(f"%{name}%")).limit(limit)
+        keywords = [word.strip() for word in name.split() if word.strip()]
+
+        conditions = [
+            Paper.title.ilike(f"%{keyword}%")
+            for keyword in keywords
+        ]
+
+        stmt = (
+            select(Paper)
+            .where(and_(*conditions))
+            .limit(limit)
+        )
         return self.db.execute(stmt).scalars().all()
